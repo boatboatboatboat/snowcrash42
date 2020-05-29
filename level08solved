@@ -1,0 +1,37 @@
+level08:
+
+level08 is a binary.
+
+$ ./level08
+./level08 [file to read]
+
+test with file?
+
+$ ./level08 token
+You may not access 'token'
+
+token is not allowed.. try other file?
+
+$ ./level08 level08
+...strstr...
+
+equivalent to cat level08...
+why is there strstr symbol?
+
+does it just check for token in name?
+
+try rename
+$ cp token test
+...: No permission
+
+try rename through link?
+
+$ ln -s token test
+$ ./level08 test
+(token)
+
+login level09:token?
+Login failed
+
+login flag09:token?
+success

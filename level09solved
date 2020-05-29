@@ -1,0 +1,30 @@
+level09:
+
+./level09 "                                                                                                                                   "
+ !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
+
+ascii in increasing order.
+
+cat token
+
+assuming token is after running level09 over original token,
+reversing ascii positions with lua script:
+
+local pp = io.open("token");
+local TOCRACK = pp:read("*all"):sub(1, -1);
+pp:close();
+local s = ""
+
+for i = 1, #TOCRACK do
+        local f = i - 1;
+        local fv = (TOCRACK:sub(i,i):byte() - f)
+        if fv < 0 then
+                fv = 128 + fv
+        end
+        s = s .. string.char(fv)
+end
+
+print(s)
+
+
+

